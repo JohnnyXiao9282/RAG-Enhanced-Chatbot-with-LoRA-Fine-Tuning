@@ -178,8 +178,10 @@ class Retriever:
             retrieved_chunks = self.fetchChains(retrieved_chunks=retrieved_chunks, 
                                                 num_of_neighbors=num_of_neighbors, 
                                                 top_k=top_k)
-        
-        retrieved_images_dict = self.retrieveImages(retrieved_chunks = retrieved_chunks)
-        reranked_chunks = self.reRankChunks(query = query, retrieved_chunks=retrieved_chunks, importance_dict = RERANKING_PARAMETERS_PERCENT)
+        retrieved_images_dict = {}
+        reranked_chunks = retrieved_chunks
+        if retrieved_chunks:
+            retrieved_images_dict = self.retrieveImages(retrieved_chunks = retrieved_chunks)
+            reranked_chunks = self.reRankChunks(query = query, retrieved_chunks=retrieved_chunks, importance_dict = RERANKING_PARAMETERS_PERCENT)
         
         return reranked_chunks, retrieved_images_dict

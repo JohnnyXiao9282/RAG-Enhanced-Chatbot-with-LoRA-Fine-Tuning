@@ -70,8 +70,12 @@ async def root():
     return {"message": "LLM Chat Application API is running"}
 
 def filter_image_dict(image_dict, image_ids_lst):
-    final_image_dict = {image_id: image_dict[image_id] for image_id in image_ids_lst}
-    return final_image_dict
+    filtered_dict = {}
+    for image_id in image_ids_lst:
+        if image_id in image_dict:
+            filtered_dict[image_id] = image_dict[image_id]
+            
+    return filtered_dict
 
 def getContextText(retieved_chunks):
     return "\n\n".join([f"Context {i+1}: {chunk['content']}" for i, chunk in enumerate(retieved_chunks)])

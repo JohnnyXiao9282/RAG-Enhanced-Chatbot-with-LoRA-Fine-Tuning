@@ -206,7 +206,6 @@ class SupabaseChunkVectorDB:
                 stats['file_type_distribution'] = {item['file_type']: item['count'] for item in file_types_result.data}
             else:
                 stats['file_type_distribution'] = {}
-            
             # Get storage size estimation (approximate)
             stats['estimated_storage_mb'] = round((stats['total_vectors'] * stats['embedding_dimensions'] * 4) / (1024 * 1024), 2)  # 4 bytes per float
             

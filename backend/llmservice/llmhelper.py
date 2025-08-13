@@ -3,6 +3,7 @@ from utils.logger import Logger
 import tiktoken
 import openai
 from llmservice.adaptiveJsonExtractor import AdaptiveJsonExtractor
+from llmservice.prompts import PROMPTS
 import os
 from dotenv import load_dotenv
 from langchain.prompts import PromptTemplate
@@ -11,6 +12,11 @@ from langchain_openai import ChatOpenAI
 from langchain_anthropic import ChatAnthropic
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_community.llms import HuggingFaceHub
+from openai import AsyncOpenAI
+import asyncio
+import json
+from datetime import datetime
+import aiofiles
 
 load_dotenv(dotenv_path="./.env")
 
@@ -70,3 +76,77 @@ class LLmHelper:
         except Exception as e:
             self.logger.error("Error counting tokens: %s", str(e))
             raise
+
+    async def generate_training_examples(self, chunks, openAi_client, max_examples_per_chunks = 4):
+        training_data = []
+        for i, chunk in enumerate(chunks):
+            chunk_content = chunk['content']
+            chunk_id = chunk['chunk_id']
+            examples = await self._generate_examples_for_chunk(chunk_content, chunk_id, max_examples_per_chunks)
+            training_data.extend(examples)
+        
+        return training_data
+
+    async def _generate_examples_for_chunk(self, chunk_content, chunk_id, openAi_client, num_examples):
+        prompt = PROMPTS['Training_Data_Generator']
+        prompt = prompt.replace("{num_examples}", num_examples).replace("{chunk}", '\n'+chunk_content)
+        
+        try:
+            response = await openAi_client.chat.completions.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "You are an expert at creating training data for query optimization models. Always respond with valid JSON."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.7,
+                max_tokens=2000
+            )
+            
+            content = response.choices[0].message.content
+            examples = json.loads(content)
+            
+            for example in examples:
+                example.update({
+                    "chunk_hash": chunk_id,
+                    "generated_at": datetime.now().isoformat()
+                })
+            return examples
+        except Exception as e:
+            pass
+    
+    async def create_training_dataset(self, chunks, openAi_client, output_file):
+        training_examples = generate_training_examples(self, chunks, openAi_client)
+        formatted_data = []
+        for example in training_examples:
+            formatted_example = {
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": "You are a query optimization assistant. Transform user queries into more effective, precise queries for information retrieval."
+                    },
+                    {
+                        "role": "user", 
+                        "content": f"Optimize this query: {example['unoptimized_query']}"
+                    },
+                    {
+                        "role": "assistant",
+                        "content": example['optimized_query']
+                    }
+                ],
+                "metadata": {
+                    "context": example.get('context', ''),
+                    "chunk_hash": example.get('chunk_hash', ''),
+                    "generated_at": example.get('generated_at', '')
+                }
+            }
+            formatted_data.append(formatted_example)
+        async with aiofiles.open(output_file, 'w') as f:
+            await f.write(json.dumps(formatted_data, indent = 2))
+        
+        return output_file
+    
+    async def trainOptimizer(self, chunks, output_file):
+        openAi_client = AsyncOpenAI(api_key = self.openai_api_key)
+        output_file = self.create_training_dataset(chunks, openAi_client, output_file)
+        print("output file generated: ", output_file)
+    

@@ -1,95 +1,258 @@
-# RAG-Enhanced-Chatbot-with-LoRA-Fine-Tuning
+# Electric RAG - Advanced Retrieval-Augmented Generation System
 
 ## 📌 Overview
 
-**RAG-Enhanced-Chatbot-with-LoRA-Fine-Tuning** is a Retrieval-Augmented Generation (RAG) based chatbot that leverages external knowledge sources and enhances generation quality using LoRA fine-tuning. It enables efficient domain-specific adaptation of large language models while combining it with semantic search for grounded, accurate, and context-rich responses.
+**Electric RAG** is a sophisticated Retrieval-Augmented Generation (RAG) system that combines document processing, semantic search, and multi-LLM orchestration to provide intelligent, context-aware responses. The system features a FastAPI backend with advanced document ingestion, embedding generation, and a React frontend for seamless user interaction.
 
 ---
 
 ## 🚀 Key Features
 
-- 🔍 **Retrieval-Augmented Generation (RAG):** Combines document retrieval with generative responses for factual accuracy.
-- 🧠 **LoRA Fine-Tuning:** Efficient fine-tuning of pre-trained models with low resource requirements.
-- 📄 **Multi-Format Document Ingestion:** Supports PDFs, text files, and scanned documents (via OCR).
-- ⚙️ **Modular Pipeline:** Separates data ingestion, chunking, embedding, retrieval, and generation for flexibility.
-- 🌐 **Custom Knowledge Base:** Tailor your chatbot to domain-specific knowledge.
+- 🔍 **Advanced RAG Pipeline:** Complete document ingestion, chunking, embedding, and retrieval system
+- 🧠 **Multi-LLM Orchestration:** Support for multiple language models with jury-based decision making
+- 📄 **Multi-Format Document Processing:** PDF parsing with OCR support, text extraction, and JSON storage
+- 🎯 **Intelligent Chunking:** Context-aware document segmentation with configurable overlap
+- 🔗 **Chain of Thought Processing:** Enhanced reasoning capabilities with iterative thinking
+- 🖼️ **Image-Aware Processing:** OCR-based image extraction and multi-modal content handling
+- 📊 **Vector Database Integration:** Supabase vector database with analytics and monitoring
+- 🌐 **Modern Web Interface:** React frontend with Tailwind CSS for optimal user experience
+- ⚡ **FastAPI Backend:** High-performance API with CORS support and comprehensive endpoints
 
 ---
 
 ## 🛠️ Tech Stack
 
-- **Language Models:** Hugging Face Transformers (e.g., LLaMA, Qwen2.5VL-7B, etc.)
-- **Vector Database:** FAISS / Pinecone / Chroma
-- **Embeddings:** OpenAI / Hugging Face Embedding APIs
-- **Fine-Tuning:** LoRA (via `peft`)
-- **Backend:** Python
-- **Parsing Tools:** PyMuPDF, pdfminer, pytesseract
+### Backend
+- **Framework:** FastAPI with Uvicorn
+- **Language Models:** GPT-4, Claude-3, Gemini-Pro, Llama-2, Mistral-7B
+- **Embeddings:** Sentence Transformers (all-mpnet-base-v2)
+- **Vector Database:** Supabase Vector Database
+- **Document Processing:** PyMuPDF, Mistral OCR
+- **Chunking:** Advanced sentence and page-based algorithms
+- **Reranking:** TF-IDF, keyword matching, and vector similarity
+
+### Frontend
+- **Framework:** React 19 with modern hooks
+- **Styling:** Tailwind CSS
+- **Icons:** Lucide React
+- **Build Tool:** Create React App
 
 ---
 
 ## 📂 Project Structure
 
 ```
-RAG-Enhanced-Chatbot-with-LoRA-Fine-Tuning/
-├── data_ingestion/          # Document parsing and preprocessing
-├── chunking/                # Context-aware document chunking
-├── embeddings/              # Embedding generation and storage
-├── retriever/               # Vector search and retrieval logic
-├── generator/               # LLM generation with context
-├── finetuning/              # LoRA fine-tuning scripts
-├── api/                     # REST or chat API integration
-├── requirements.txt         # Python dependencies
-└── README.md                # Project overview and instructions
+RAG/
+├── backend/                          # FastAPI backend application
+│   ├── chunking/                     # Document chunking algorithms
+│   │   ├── chunker.py               # Main chunking interface
+│   │   └── chunkers/                # Specific chunking implementations
+│   ├── config/                       # Configuration settings
+│   │   └── settings.py              # Global configuration parameters
+│   ├── data/                         # Data storage and processing
+│   │   ├── raw_document_data/       # Temporary document storage
+│   │   └── raw_jsons/               # Processed JSON outputs
+│   ├── database/                     # Database layer
+│   │   ├── relational/               # Relational database components
+│   │   └── vector/                   # Vector database integration
+│   │       ├── vectorDB.py          # Vector database interface
+│   │       └── vectorDBs/           # Specific vector DB implementations
+│   ├── embedding/                    # Embedding generation
+│   │   ├── encoder.py               # Main encoder interface
+│   │   └── encoders/                # Specific encoder implementations
+│   ├── generation/                   # LLM generation components
+│   ├── helpers/                      # Utility helper modules
+│   ├── ingestion/                    # Document ingestion pipeline
+│   │   └── ingestion.py             # Main ingestion orchestrator
+│   ├── llmservice/                   # LLM service layer
+│   │   ├── multillmorchestrator.py  # Multi-LLM orchestration
+│   │   ├── adaptiveJsonExtractor.py # JSON response extraction
+│   │   ├── llmmodels.py             # LLM model definitions
+│   │   └── prompts.py               # System prompts
+│   ├── parsing/                      # Document parsing
+│   │   ├── parser.py                # Main parser interface
+│   │   └── parsers/                 # Specific parser implementations
+│   ├── retriever/                    # Retrieval system
+│   │   ├── retriever.py             # Main retrieval logic
+│   │   └── reranker/                # Reranking algorithms
+│   ├── utils/                        # Utility functions
+│   │   └── logger.py                # Logging configuration
+│   └── main.py                      # FastAPI application entry point
+├── frontend/                         # React frontend application
+│   └── electric-rag/                # Main frontend package
+│       ├── src/                     # React source code
+│       ├── public/                  # Static assets
+│       └── package.json             # Frontend dependencies
+├── requirements.txt                  # Python dependencies
+└── README.md                        # Project documentation
 ```
 
 ---
 
-## ✅ Use Cases
+## ✅ Core Functionality
 
-- 💬 Customer support chatbots with company-specific knowledge
-- 🧾 Legal or healthcare assistants with regulated document references
-- 📚 Academic or research tools grounded in verified sources
-- 🏢 Enterprise knowledge management bots
+### Document Processing
+- **Multi-format Support:** PDF, text, and scanned documents
+- **OCR Integration:** Mistral OCR for image-based content extraction
+- **Smart Chunking:** Configurable chunk sizes with overlap optimization
+- **Content Preservation:** Maintains document structure and formatting
+
+### Retrieval System
+- **Semantic Search:** Vector similarity-based document retrieval
+- **Multi-modal Retrieval:** Text and image content matching
+- **Reranking:** Combines TF-IDF, keyword matching, and vector similarity
+- **Configurable Top-K:** Adjustable number of retrieved chunks
+
+### LLM Orchestration
+- **Multi-LLM Support:** Integration with multiple language model providers
+- **Jury-based Decisions:** Consensus-based response generation
+- **Chain of Thought:** Iterative reasoning for complex queries
+- **Expert LLM Selection:** Specialized model selection for specific tasks
+
+### API Endpoints
+- **Chat Interface:** `/api/chat` - Main conversation endpoint
+- **Document Upload:** `/api/upload` - File ingestion with optional training
+- **Analytics:** `/api/analytics` - Vector database statistics
+- **Health Check:** `/api/health` - System status monitoring
+- **LLM Models:** `/api/llm-models` - Available model information
 
 ---
 
 ## 🧪 Getting Started
 
+### Prerequisites
+- Python 3.8+
+- Node.js 16+ (for frontend)
+- Supabase account (for vector database)
+- API keys for LLM providers
+
+### Backend Setup
+
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/yourusername/RAG-Enhanced-Chatbot-with-LoRA-Fine-Tuning.git
-   cd RAG-Enhanced-Chatbot-with-LoRA-Fine-Tuning
+   git clone <repository-url>
+   cd RAG/backend
    ```
 
-2. **Install dependencies:**
+2. **Install Python dependencies:**
    ```bash
    pip install -r requirements.txt
    ```
 
-3. **Prepare your documents** in the `/data_ingestion/` directory.
+3. **Configure environment variables:**
+   Create a `.env` file with:
+   ```env
+   ENCODER_NAME=sentence_encoder
+   ENCODING_MODEL=all-mpnet-base-v2
+   PARSER=mistral_ocr
+   CHUNKER=group_embedding
+   ```
 
-4. **Run the ingestion pipeline** to chunk and embed your documents.
+4. **Start the backend server:**
+   ```bash
+   python main.py
+   ```
+   The API will be available at `http://localhost:8000`
 
-5. **Launch the chatbot** (with or without an API/UI) and start chatting!
+### Frontend Setup
 
----
+1. **Navigate to frontend directory:**
+   ```bash
+   cd ../frontend/electric-rag
+   ```
 
-## 📋 Prerequisites
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
 
-- Python 3.8+
-- CUDA-compatible GPU (recommended for LoRA fine-tuning)
-- Sufficient storage for vector embeddings and model weights
+3. **Start the development server:**
+   ```bash
+   npm start
+   ```
+   The frontend will be available at `http://localhost:3000`
 
 ---
 
 ## 🔧 Configuration
 
-Before running the project, configure the following:
+### Backend Settings (`backend/config/settings.py`)
+- **Chunking:** `DEFAULT_CHUNK_LENGTH`, `DEFAULT_OVER_LAP`
+- **Retrieval:** `TOP_K`, `SIMILARITY_TH`
+- **Processing:** `DEFAULT_TEMPERATURE`, `DEFAULT_THINKING_ITERATIONS`
+- **Storage:** `TEMP_FILES_DOC`, `TEMP_FILES_JSONS`
 
-- Set your API keys for embedding services (OpenAI, Hugging Face)
-- Choose your preferred vector database (FAISS for local, Pinecone/Chroma for cloud)
-- Select the base language model for fine-tuning
-- Adjust chunking parameters based on your document types
+### Vector Database
+- Configure Supabase connection in `backend/database/vector/vectorDBs/supabasevdb.py`
+- Set up appropriate indexes for optimal search performance
+
+### LLM Providers
+- Configure API keys for supported providers
+- Adjust model selection in `backend/llmservice/llmmodels.py`
+
+---
+
+## 📊 API Usage
+
+### Chat Request
+```json
+{
+  "query": "What is the main topic of the document?",
+  "multiLLM": false,
+  "fetchChains": true,
+  "noOfNeighbours": 5,
+  "activeLLMs": [],
+  "expertLLM": "GPT-4",
+  "chainOfThought": true
+}
+```
+
+### Document Upload
+```bash
+curl -X POST "http://localhost:8000/api/upload" \
+  -F "files=@document.pdf" \
+  -F "train_model=false"
+```
+
+---
+
+## 🚀 Deployment
+
+### Production Considerations
+- Use proper environment variable management
+- Implement authentication and authorization
+- Set up monitoring and logging
+- Configure CORS origins for production domains
+- Use production-grade vector database instances
+
+### Docker Support
+- Backend can be containerized with FastAPI
+- Frontend can be built and served statically
+- Use environment-specific configuration files
+
+---
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+### Development Guidelines
+- Follow PEP 8 for Python code
+- Use TypeScript for frontend components
+- Add comprehensive tests for new features
+- Update documentation for API changes
+
+---
+
+## 📞 Support
+
+- **Issues:** Create GitHub issues for bugs or feature requests
+- **Discussions:** Use GitHub Discussions for questions and ideas
+- **Documentation:** Check the codebase for implementation details
 
 ---
 
@@ -99,12 +262,11 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ---
 
-## 🤝 Contributing
+## 🔮 Roadmap
 
-Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
-
----
-
-## 📞 Support
-
-If you encounter any issues or have questions, please open an issue on GitHub or contact the maintainer.
+- [ ] Enhanced multi-modal support
+- [ ] Advanced reranking algorithms
+- [ ] Real-time collaboration features
+- [ ] Mobile application
+- [ ] Advanced analytics dashboard
+- [ ] Plugin system for custom processors

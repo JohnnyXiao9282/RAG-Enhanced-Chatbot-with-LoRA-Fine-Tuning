@@ -315,9 +315,29 @@ Analyze your previous response and improve it through deeper reasoning, better o
 - If you list any hashes in relevant_image_tags, those SAME hashes MUST appear as <image_id>hash</image_id> tags within your improved_answer text
 - Always stay grounded in the provided context
 - Build upon your previous response rather than completely rewriting
-- Be honest about limitations and uncertainty"""
+- Be honest about limitations and uncertainty""",
 
+    "Training_Data_Generator": """Based on the following document chunk, generate {num_examples} training examples for a query optimization model.        
+For each example, create:
+1. An unoptimized query (how a user might naturally ask)
+2. An optimized query (more precise, structured, and effective for information retrieval)
+
+Document chunk:
+{chunk}
+
+Please respond with a JSON array containing objects with the following structure:
+{{
+    "unoptimized_query": "user's natural question",
+    "optimized_query": "improved, more precise version",
+    "context": "relevant context from the chunk"
+}}
+
+Make sure the queries are diverse and cover different aspects of the content.
+The optimized queries should be more specific, use better keywords, and be structured for better retrieval.
+"""
 }
+
+
 
 ADAPTATIONS = {
     'gpt-3.5-turbo': {
