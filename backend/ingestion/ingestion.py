@@ -3,9 +3,11 @@ from parsing.parser import Parser
 from chunking.chunker import Chunker
 from config.settings import *
 from database.vector.vectorDB import VectorDB
+from llmservice.llmhelper import LLmHelper
 import threading
 from utils.logger import Logger
-
+from datetime import datetime
+import asyncio
 
 class Ingestaion:
     
@@ -24,6 +26,8 @@ class Ingestaion:
         self.logger = Logger(name="RAGLogger").get_logger()
 
         self.vectordb = VectorDB()
+        
+        self.llmhelper = LLmHelper(generation_model = kwargs.get('generation_model', DEFAULT_GENERATION_MODEL))
     # Part-1
         # parsing    
     def parse_document(self, pdf_path, save_json = False, output_json_path = ""):
@@ -61,8 +65,19 @@ class Ingestaion:
         # Training the Query optimizer model (if training is On)
             # Generate raw user queries and optimized queries based on document annotations
             # Train the QWEN / LLaMa model 
-    def train_query_optimizer(self, chunks):
-        pass
+    async def train_query_optimizer(self, chunks):
+        # generate the data, first then train the LLM model
+        print("Data augmentation started...")
+        await self.llmhelper.trainOptimizer(chunks, output_file = f"training_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json")
+    
+    def run_async_in_thread(self, coro):
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(coro)
+        loop.close()
+    
+    
+        
     
     def ingest_files(self, file_path_lists, save_json, train_query_opt = False):
         output_json_paths = self.parse_docs(pdf_paths=file_path_lists, save_json=save_json)
@@ -71,7 +86,10 @@ class Ingestaion:
         chunks, image_objs = self.find_chunks(output_json_paths=output_json_paths)
         if train_query_opt:
             t1 = threading.Thread(target=self.ingest_chunks_imgs(chunks=chunks, image_objs=image_objs))
-            t2 = threading.Thread(target=self.train_query_optimizer(chunks=chunks))
+            t2 = threading.Thread(
+                target=self.run_async_in_thread,
+                args=(self.train_query_optimizer(chunks),)  # pass coroutine object
+            )
             t1.start()
             t2.start()
             t1.join() # only wait for the data to be ingested. no need to wait for the query optimizer to be trained.

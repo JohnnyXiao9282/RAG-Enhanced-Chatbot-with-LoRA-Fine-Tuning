@@ -46,15 +46,199 @@ class AdaptiveJsonExtractor:
             "relevant_image_tags", "confidence_score", "continue_iteration",
             "needs_review", "continue_pipeline"
         ]
-        
+    
     def extract_orchestrator_json_block(self, text):
+        """Main extraction method with robust error handling"""
         if '```json' in text:
             pattern = r'```json\n(.*?)\n```'
             match = re.search(pattern, text, re.DOTALL)
             if match:
                 json_str = match.group(1)
-                return json.loads(json_str)
+                try:
+                    # First attempt: try parsing as-is
+                    return json.loads(json_str)
+                except json.JSONDecodeError as e:
+                    print(f"Initial JSON parse failed: {e}")
+                    try:
+                        # Second attempt: fix common escape sequence issues
+                        cleaned_json = self._fix_escape_sequences(json_str)
+                        return json.loads(cleaned_json)
+                    except json.JSONDecodeError as e:
+                        print(f"Cleaned JSON parse failed: {e}")
+                        try:
+                            # Third attempt: use raw string decoder
+                            return self._parse_json_with_raw_strings(json_str)
+                        except Exception as e:
+                            print(f"Raw string parsing failed: {e}")
+                            # Fallback: extract answer manually
+                            return self._extract_answer_manually(text)
         return {"answer": text}
+    
+    def _fix_escape_sequences(self, json_str):
+        """Fix common escape sequence issues in JSON strings"""
+        # Handle control characters that cause JSON parsing to fail
+        json_str = json_str.replace('\n', '\\n')
+        json_str = json_str.replace('\r', '\\r')
+        json_str = json_str.replace('\t', '\\t')
+        json_str = json_str.replace('\b', '\\b')
+        json_str = json_str.replace('\f', '\\f')
+        
+        # Replace problematic LaTeX escape sequences
+        json_str = json_str.replace('\\\\operatorname', '\\\\\\\\operatorname')
+        json_str = json_str.replace('\\\\text', '\\\\\\\\text')
+        
+        # Fix unescaped backslashes (but preserve already escaped ones)
+        json_str = re.sub(r'(?<!\\)\\(?!["\\/bfnrt]|u[0-9a-fA-F]{4})', r'\\\\', json_str)
+        
+        # Handle unescaped quotes within strings
+        # This is a more complex regex that tries to fix unescaped quotes
+        def fix_quotes_in_strings(match):
+            content = match.group(1)
+            # Escape unescaped quotes
+            content = re.sub(r'(?<!\\)"', r'\\"', content)
+            return f'"{content}"'
+        
+        # Apply quote fixing to string values
+        json_str = re.sub(r'"([^"]*(?:\\.[^"]*)*)"', fix_quotes_in_strings, json_str)
+        
+        return json_str
+    
+    def _parse_json_with_raw_strings(self, json_str):
+        """Alternative parsing method for strings with complex escape sequences"""
+        try:
+            # Try to extract key-value pairs manually
+            result = {}
+            
+            # Extract the main answer field (could be 'answer', 'improved_answer', etc.)
+            answer_patterns = [
+                r'"improved_answer":\s*"(.*?)"(?=,\s*"[^"]*":|,\s*}|\s*})',
+                r'"answer":\s*"(.*?)"(?=,\s*"[^"]*":|,\s*}|\s*})',
+                r'"final_answer":\s*"(.*?)"(?=,\s*"[^"]*":|,\s*}|\s*})'
+            ]
+            
+            for pattern in answer_patterns:
+                answer_match = re.search(pattern, json_str, re.DOTALL)
+                if answer_match:
+                    result["answer"] = self._clean_extracted_string(answer_match.group(1))
+                    break
+            
+            # Extract reasoning
+            reasoning_match = re.search(r'"reasoning":\s*"(.*?)"(?=,\s*"[^"]*":|,\s*}|\s*})', json_str, re.DOTALL)
+            if reasoning_match:
+                result["reasoning"] = self._clean_extracted_string(reasoning_match.group(1))
+            
+            # Extract relevant_image_tags array
+            image_tags_match = re.search(r'"relevant_image_tags":\s*\[(.*?)\]', json_str, re.DOTALL)
+            if image_tags_match:
+                tags_content = image_tags_match.group(1)
+                # Extract individual tags
+                tag_matches = re.findall(r'"([^"]+)"', tags_content)
+                result["relevant_image_tags"] = tag_matches
+            else:
+                result["relevant_image_tags"] = []
+            
+            # Extract other common fields
+            field_patterns = {
+                "improvement_strategy": r'"improvement_strategy":\s*"(.*?)"(?=,\s*"[^"]*":|,\s*}|\s*})',
+                "iteration_summary": r'"iteration_summary":\s*"(.*?)"(?=,\s*"[^"]*":|,\s*}|\s*})',
+                "next_focus": r'"next_focus":\s*"(.*?)"(?=,\s*"[^"]*":|,\s*}|\s*})',
+                "quality_progression": r'"quality_progression":\s*"(.*?)"(?=,\s*"[^"]*":|,\s*}|\s*})'
+            }
+            
+            for field, pattern in field_patterns.items():
+                field_match = re.search(pattern, json_str, re.DOTALL)
+                if field_match:
+                    result[field] = self._clean_extracted_string(field_match.group(1))
+            
+            # Extract numeric fields
+            numeric_fields = ["confidence_score"]
+            for field in numeric_fields:
+                field_match = re.search(rf'"{field}":\s*(\d+(?:\.\d+)?)', json_str)
+                if field_match:
+                    try:
+                        result[field] = float(field_match.group(1))
+                    except ValueError:
+                        result[field] = 0
+            
+            # Extract boolean fields
+            boolean_fields = ["continue_iteration"]
+            for field in boolean_fields:
+                field_match = re.search(rf'"{field}":\s*(true|false)', json_str, re.IGNORECASE)
+                if field_match:
+                    result[field] = field_match.group(1).lower() == 'true'
+            
+            # Extract array fields (like changes_made)
+            array_fields = ["changes_made"]
+            for field in array_fields:
+                array_match = re.search(rf'"{field}":\s*\[(.*?)\]', json_str, re.DOTALL)
+                if array_match:
+                    array_content = array_match.group(1)
+                    # Extract individual array items
+                    items = re.findall(r'"([^"]*)"', array_content)
+                    result[field] = [self._clean_extracted_string(item) for item in items]
+            
+            return result
+            
+        except Exception as e:
+            print(f"Raw string parsing error: {e}")
+            raise e
+    
+    def _clean_extracted_string(self, text):
+        """Clean up extracted string content"""
+        # Unescape common escape sequences
+        text = text.replace('\\"', '"')
+        text = text.replace('\\n', '\n')
+        text = text.replace('\\r', '\r')
+        text = text.replace('\\t', '\t')
+        text = text.replace('\\\\', '\\')
+        return text
+    
+    def _extract_answer_manually(self, text):
+        """Fallback method to extract at least the answer from malformed JSON"""
+        try:
+            # Try to find any answer field
+            answer_patterns = [
+                r'"improved_answer":\s*"(.*?)"',
+                r'"answer":\s*"(.*?)"',
+                r'"final_answer":\s*"(.*?)"'
+            ]
+            
+            for pattern in answer_patterns:
+                match = re.search(pattern, text, re.DOTALL)
+                if match:
+                    answer = self._clean_extracted_string(match.group(1))
+                    return {
+                        "answer": answer,
+                        "reasoning": "Extracted from malformed JSON",
+                        "relevant_image_tags": []
+                    }
+        except Exception as e:
+            print(f"Manual extraction failed: {e}")
+        
+        # Ultimate fallback
+        return {
+            "answer": "Unable to parse response. Please try again.",
+            "reasoning": "JSON parsing failed",
+            "relevant_image_tags": []
+        }
+    
+    # Keep the old method name for backward compatibility
+    def extract_orchestrator_json_block_v2(self, text):
+        """Deprecated: Use extract_orchestrator_json_block instead"""
+        return self.extract_orchestrator_json_block(text)
+    
+    def _safe_json_loads(self, json_str):
+        """Safely load JSON with better error handling"""
+        try:
+            return json.loads(json_str)
+        except json.JSONDecodeError as e:
+            print(f"JSON decode error at position {e.pos}: {e.msg}")
+            # Show context around the error
+            start = max(0, e.pos - 50)
+            end = min(len(json_str), e.pos + 50)
+            context = json_str[start:end]
+            print(f"Context around error: ...{context}...")
+            raise e
     
     def extract_json_block(self, text, prompt_type):
         
@@ -177,23 +361,3 @@ class AdaptiveJsonExtractor:
             if key not in extracted:
                 extracted[key] = value
         return extracted
-    
-
-
-# if __name__ == "__main__":
-#     raw_output = '''
-# Here is the model output:
-
-# ```json
-# {
-#   "answer": "The mitochondrion is the powerhouse of the cell.",
-#   "reasoning": "Based on the provided biological context, the mitochondria are responsible for ATP production, which fuels cellular processes.",
-#   "confidence_score": 0.92,
-#   "needs_review": false,
-#   "relevant_image_tags": ["<image_id>bio_001</image_id>"],
-#   "context_coverage": "High — directly addressed the function of mitochondria based on the input text."
-# }
-# '''
-#     extractor = AdaptiveJsonExtractor()
-#     output = extractor.extract_json_block(text=raw_output, prompt_type="MasterLLMPrompt")
-#     print(output)
