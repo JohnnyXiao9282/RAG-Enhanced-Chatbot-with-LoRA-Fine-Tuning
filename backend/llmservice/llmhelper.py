@@ -146,7 +146,83 @@ class LLmHelper:
         return output_file
     
     async def trainOptimizer(self, chunks, output_file):
+        """
+        Train query optimizer with LoRA fine-tuning
+        1. Generate training data using GPT-4
+        2. Optionally fine-tune model with LoRA if enabled
+        """
         openAi_client = AsyncOpenAI(api_key = self.openai_api_key)
-        output_file = self.create_training_dataset(chunks, openAi_client, output_file)
-        print("output file generated: ", output_file)
+        
+        # Generate training data
+        self.logger.info("Generating training data...")
+        output_file = await self.create_training_dataset(chunks, openAi_client, output_file)
+        self.logger.info(f"Training data saved to: {output_file}")
+        
+        # Check if we have enough examples for LoRA training
+        if not LORA_ENABLED:
+            self.logger.info("LoRA training is disabled in settings")
+            return output_file
+        
+        try:
+            # Count examples in generated file
+            with open(output_file, 'r') as f:
+                training_data = json.load(f)
+                num_examples = len(training_data)
+            
+            self.logger.info(f"Generated {num_examples} training examples")
+            
+            if num_examples < LORA_MIN_TRAINING_EXAMPLES:
+                self.logger.warning(
+                    f"Not enough training examples ({num_examples}/{LORA_MIN_TRAINING_EXAMPLES}). "
+                    "Skipping LoRA fine-tuning."
+                )
+                return output_file
+            
+            # Import LoRA trainer
+            from training.lora_trainer import quick_train
+            from training.model_config import get_lightweight_config, get_default_config
+            
+            self.logger.info("Starting LoRA fine-tuning...")
+            
+            # Setup config
+            if LORA_USE_LIGHTWEIGHT_CONFIG:
+                config = get_lightweight_config()
+            else:
+                config = get_default_config()
+            
+            # Update config from settings
+            config.base_model_name = LORA_MODEL_NAME
+            config.output_dir = LORA_OUTPUT_DIR
+            config.num_train_epochs = LORA_EPOCHS
+            config.per_device_train_batch_size = LORA_BATCH_SIZE
+            config.lora_r = LORA_RANK
+            config.lora_alpha = LORA_ALPHA
+            config.max_seq_length = LORA_MAX_SEQ_LENGTH
+            
+            # Train model
+            metrics = quick_train(
+                training_data_path=output_file,
+                output_dir=config.output_dir,
+                model_name=config.base_model_name,
+                epochs=config.num_train_epochs,
+                use_lightweight=LORA_USE_LIGHTWEIGHT_CONFIG
+            )
+            
+            self.logger.info("LoRA fine-tuning completed!")
+            self.logger.info(f"Model saved to: {config.output_dir}")
+            self.logger.info(f"Training metrics: {metrics}")
+            
+            # Update settings to use the fine-tuned model
+            global FINETUNED_OPTIMIZER_PATH, USE_FINETUNED_OPTIMIZER
+            FINETUNED_OPTIMIZER_PATH = config.output_dir
+            USE_FINETUNED_OPTIMIZER = True
+            
+            self.logger.info("Fine-tuned model is now available for query optimization")
+            
+        except Exception as e:
+            self.logger.error(f"Error during LoRA training: {str(e)}")
+            self.logger.warning("Continuing without fine-tuned model")
+        
+        return output_file
+
     

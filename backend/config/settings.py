@@ -38,6 +38,24 @@ RERANKING_PARAMETERS_PERCENT = {
 }
 DEFAULT_TEMPERATURE = 0.2
 DEFAULT_THINKING_ITERATIONS=3
+
+# LoRA Fine-tuning Settings
+LORA_ENABLED = True  # Enable/disable LoRA fine-tuning
+LORA_MODEL_NAME = "mistralai/Mistral-7B-Instruct-v0.2"  # Base model for fine-tuning
+LORA_OUTPUT_DIR = "./models/lora_query_optimizer"  # Where to save trained models
+LORA_TRAINING_DATA_DIR = "./data/training_data"  # Where training data is stored
+LORA_USE_LIGHTWEIGHT_CONFIG = True  # Use lightweight config for 8GB VRAM GPUs
+LORA_EPOCHS = 3  # Number of training epochs
+LORA_BATCH_SIZE = 4  # Training batch size
+LORA_RANK = 16  # LoRA rank (lower = less parameters)
+LORA_ALPHA = 32  # LoRA alpha scaling
+LORA_MAX_SEQ_LENGTH = 512  # Maximum sequence length for training
+LORA_MIN_TRAINING_EXAMPLES = 100  # Minimum examples needed before training
+
+# Query Optimizer Settings
+USE_FINETUNED_OPTIMIZER = False  # Use fine-tuned model for query optimization
+FINETUNED_OPTIMIZER_PATH = None  # Path to fine-tuned adapter (set after training)
+
 # MIN_TABLES_COUNT = 1
 # MIN_IMAGES_COUNT = 1
 # UNREAD_DATA_DIR_PATH = 'data/raw_pdfs/unRead'
