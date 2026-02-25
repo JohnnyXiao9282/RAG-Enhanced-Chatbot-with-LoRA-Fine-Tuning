@@ -41,6 +41,7 @@ LORA_USE_LIGHTWEIGHT_CONFIG = True  # For 8GB VRAM GPUs
 ### 3. Upload Documents and Train
 
 Through the UI:
+
 1. Upload documents via the Upload panel
 2. Check "Enable model training with uploaded documents"
 3. Training starts automatically after data generation
@@ -80,6 +81,7 @@ config = get_model_config("mistral-7b")
 ### Memory Configurations
 
 **Lightweight (8GB VRAM)**:
+
 ```python
 from training.model_config import get_lightweight_config
 
@@ -88,6 +90,7 @@ config = get_lightweight_config()
 ```
 
 **Performance (24GB+ VRAM)**:
+
 ```python
 from training.model_config import get_performance_config
 
@@ -114,6 +117,7 @@ LORA_MIN_TRAINING_EXAMPLES = 100   # Min examples to start training
 ### Automatic Training (Recommended)
 
 Training happens automatically when:
+
 1. User uploads documents with "Train Model" enabled
 2. System generates 100+ training examples
 3. LoRA fine-tuning starts in background
@@ -177,7 +181,7 @@ user_query = "what are transformers?"
 
 # Optimized query (uses fine-tuned model if available)
 optimized = optimize_user_query(user_query)
-# Output: "Explain the transformer architecture in neural networks, 
+# Output: "Explain the transformer architecture in neural networks,
 #          including self-attention mechanisms and their applications in NLP"
 ```
 
@@ -230,18 +234,21 @@ The system generates training data in this format:
 ## Hardware Requirements
 
 ### Minimum (Lightweight Config)
+
 - **GPU**: 8GB VRAM (RTX 3060, RTX 4060)
 - **RAM**: 16GB system RAM
 - **Storage**: 20GB free space
 - **Training Time**: 1-2 hours for 500 examples
 
 ### Recommended (Performance Config)
+
 - **GPU**: 24GB VRAM (RTX 3090, RTX 4090, A5000)
 - **RAM**: 32GB system RAM
 - **Storage**: 50GB free space
 - **Training Time**: 30-45 minutes for 500 examples
 
 ### Cloud Alternatives
+
 - **Google Colab**: Free T4 GPU (15GB VRAM)
 - **Lambda Labs**: Starting at $0.50/hr
 - **AWS SageMaker**: P3 instances
@@ -261,6 +268,7 @@ tensorboard --logdir ./logs/lora_training
 Logs are saved to: `./logs/lora_training/training_YYYYMMDD_HHMMSS.log`
 
 ### Key Metrics
+
 - **Training Loss**: Should decrease over time (< 1.0 is good)
 - **Evaluation Loss**: Should decrease without increasing (no overfitting)
 - **Learning Rate**: Follows cosine schedule

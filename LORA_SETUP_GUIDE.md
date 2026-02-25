@@ -7,19 +7,23 @@ Your RAG system now has full LoRA fine-tuning capabilities for query optimizatio
 ## 📋 What Was Implemented
 
 ### Core Components
+
 ✅ **Training Infrastructure** (`backend/training/`)
+
 - `lora_trainer.py` - Main training logic with 4-bit quantization support
 - `model_config.py` - Flexible configuration system (lightweight/performance)
 - `data_processor.py` - Automatic dataset formatting and processing
 - `query_optimizer.py` - Inference service for using fine-tuned models
 
 ✅ **Integration**
+
 - Auto-training during document upload (when enabled)
 - Seamless integration with existing training data generation
 - Automatic model loading for query optimization
 - Settings management through `config/settings.py`
 
 ✅ **Dependencies**
+
 - All required packages added to `requirements.txt`
 - Support for PyTorch, Transformers, PEFT, TRL, and more
 
@@ -33,6 +37,7 @@ pip install -r requirements.txt
 ```
 
 **Note**: This will install ~5GB of packages. Ensure you have:
+
 - Python 3.8+
 - CUDA 11.8+ (for GPU support)
 - 20GB free disk space
@@ -59,12 +64,14 @@ LORA_MIN_TRAINING_EXAMPLES = 100   # Minimum examples needed
 ### Step 3: Upload Documents with Training Enabled
 
 **Via UI:**
+
 1. Go to Upload panel in the web interface
 2. Select your PDF documents
 3. ✅ **Check "Enable model training with uploaded documents"**
 4. Click Upload
 
 **Programmatically:**
+
 ```python
 from ingestion.ingestion import Ingestaion
 
@@ -84,6 +91,7 @@ ingestion.ingest_files(
 ### Step 4: Wait for Training
 
 Training happens automatically in the background:
+
 1. **Data Generation** (~5-10 min): Creates query optimization pairs
 2. **Model Download** (~5-10 min): Downloads base model (first time only)
 3. **LoRA Training** (~30-60 min): Fine-tunes the model
@@ -102,26 +110,30 @@ query = "what are transformers?"
 
 # Automatically optimized using fine-tuned model
 optimized = optimize_user_query(query)
-# Output: "Explain the transformer architecture in neural networks, 
+# Output: "Explain the transformer architecture in neural networks,
 #          including self-attention mechanisms and their applications in NLP"
 ```
 
 ## 💻 Hardware Requirements
 
 ### Minimum Setup (Lightweight Config)
+
 - **GPU**: 8GB VRAM (RTX 3060, RTX 4060, or better)
 - **RAM**: 16GB system memory
 - **Storage**: 20GB free space
 - **Training Time**: 1-2 hours for 500 examples
 
 ### Recommended Setup
+
 - **GPU**: 16GB+ VRAM (RTX 3080, RTX 4080, A4000)
 - **RAM**: 32GB system memory
 - **Storage**: 50GB free space
 - **Training Time**: 30-45 minutes for 500 examples
 
 ### No GPU?
+
 Use cloud options:
+
 - **Google Colab**: Free T4 GPU (15GB VRAM) - [colab.research.google.com](https://colab.research.google.com)
 - **Lambda Labs**: Starting at $0.50/hr - [lambdalabs.com](https://lambdalabs.com)
 - **Paperspace**: Gradient notebooks - [paperspace.com](https://paperspace.com)
@@ -209,6 +221,7 @@ ls -lh ./logs/lora_training/
 ```
 
 ### Key Metrics to Watch
+
 - **Training Loss**: Should decrease to < 1.0
 - **Eval Loss**: Should decrease without increasing (no overfitting)
 - **GPU Memory**: Monitor to avoid OOM errors
@@ -218,16 +231,19 @@ ls -lh ./logs/lora_training/
 ### Problem: Out of Memory (OOM)
 
 **Solution 1**: Reduce batch size in `settings.py`:
+
 ```python
 LORA_BATCH_SIZE = 2
 ```
 
 **Solution 2**: Reduce sequence length:
+
 ```python
 LORA_MAX_SEQ_LENGTH = 256
 ```
 
 **Solution 3**: Reduce LoRA rank:
+
 ```python
 LORA_RANK = 8
 ```
@@ -235,11 +251,13 @@ LORA_RANK = 8
 ### Problem: Training Too Slow
 
 **Solution 1**: Increase batch size (if memory allows):
+
 ```python
 LORA_BATCH_SIZE = 8
 ```
 
 **Solution 2**: Use performance config:
+
 ```python
 LORA_USE_LIGHTWEIGHT_CONFIG = False
 ```
@@ -247,6 +265,7 @@ LORA_USE_LIGHTWEIGHT_CONFIG = False
 ### Problem: Poor Optimization Results
 
 **Solutions**:
+
 1. **More Data**: Generate 500-1000+ training examples
 2. **More Epochs**: Increase to 5-10 epochs
 3. **Higher Rank**: Set `LORA_RANK = 32` or `64`
@@ -255,6 +274,7 @@ LORA_USE_LIGHTWEIGHT_CONFIG = False
 ### Problem: Model Not Being Used
 
 **Check**:
+
 ```python
 from llmservice.query_optimizer import get_query_optimizer
 
@@ -263,6 +283,7 @@ print(f"Model loaded: {optimizer.is_available()}")
 ```
 
 **Enable manually in `settings.py`**:
+
 ```python
 USE_FINETUNED_OPTIMIZER = True
 FINETUNED_OPTIMIZER_PATH = "./models/lora_query_optimizer"
@@ -299,11 +320,13 @@ backend/
 ## 🎓 Learning Resources
 
 ### Documentation
+
 - **Training README**: `backend/training/README.md` - Comprehensive guide
 - **Quick Start Notebook**: `backend/Scripts/training/lora_quickstart.ipynb`
 - **Code Comments**: All modules have detailed docstrings
 
 ### External Resources
+
 - [LoRA Paper](https://arxiv.org/abs/2106.09685) - Original research
 - [PEFT Documentation](https://huggingface.co/docs/peft) - HuggingFace PEFT library
 - [TRL Documentation](https://huggingface.co/docs/trl) - Transformer Reinforcement Learning
@@ -342,17 +365,20 @@ backend/
 ## 🚦 Next Steps
 
 1. **Test the System**
+
    ```bash
    # Run the quick start notebook
    jupyter notebook backend/Scripts/training/lora_quickstart.ipynb
    ```
 
 2. **Upload Real Documents**
+
    - Start with 5-10 documents from your domain
    - Enable training in the UI
    - Wait for training to complete (~1-2 hours)
 
 3. **Evaluate Performance**
+
    - Test queries before and after training
    - Compare retrieval accuracy
    - Monitor user satisfaction
@@ -365,6 +391,7 @@ backend/
 ## 📞 Support
 
 If you encounter issues:
+
 1. Check the troubleshooting section above
 2. Review logs in `./logs/lora_training/`
 3. Consult `backend/training/README.md` for detailed docs
@@ -373,6 +400,7 @@ If you encounter issues:
 ## 🎊 Congratulations!
 
 You now have a complete LoRA fine-tuning system integrated into your RAG chatbot. The system will:
+
 - ✅ Automatically generate training data from your documents
 - ✅ Fine-tune models with minimal GPU memory
 - ✅ Optimize queries for better retrieval
